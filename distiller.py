@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from git import Repo
 import os
 
