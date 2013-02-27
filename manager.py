@@ -30,7 +30,9 @@ def clone_repos():
     current_repos = set(list_repos())
     for path, url in saved_repos - current_repos:
         print 'clone %s to %s' % (url, path)
-        Repo.clone_from(url, path)
+        repos_dir = os.path.join('/Users/kenjif/new_repo', path)
+        kargs = {'separate-git-dir' : repos_dir}
+        Repo.clone_from(url, path, None, **kargs)
 
 def update_repos_list():
     saved_repos = set(load_repos_list('repositories.csv'))
