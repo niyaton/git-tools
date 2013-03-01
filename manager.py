@@ -150,6 +150,11 @@ def fix_dirty():
 
         shutil.rmtree(tmp_dir)
         
+def list_repos_command():
+    repos = list(load_repos_list('repositories.csv'))
+    max_length = max([len(path) for path, url in repos])
+    for path, url in repos:
+        print "%s\t%s" %(path.ljust(max_length), url)
 
 def remove():
     saved_repos = set(load_repos_list('repositories.csv'))
@@ -174,6 +179,8 @@ if __name__ == '__main__':
     sub_parser.set_defaults(func=fix_dirty)
     sub_parser = subparsers.add_parser('remove')
     sub_parser.set_defaults(func=remove)
+    sub_parser = subparsers.add_parser('list')
+    sub_parser.set_defaults(func=list_repos_command)
 
     args = parser.parse_args()
     args.func()
