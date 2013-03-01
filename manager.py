@@ -62,8 +62,6 @@ def list_unstored_repos(repos):
         repo_dir = os.path.join(repos_root, repo)
         if not is_git_dir(repo_dir):
             yield repo
-    
-
 
 def load_repos_list(path):
     for row in csv.reader(open(path)):
@@ -162,10 +160,6 @@ def remove():
         print 'remove:', path, repo.git_dir
         shutil.rmtree(repo.git_dir)
         shutil.rmtree(path)
-
-
- 
-
 
 if __name__ == '__main__':
     import argparse
