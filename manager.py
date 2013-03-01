@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 from git import Repo
 from git.repo.fun import is_git_dir
