@@ -7,6 +7,19 @@ import csv
 import tempfile
 import shutil
 
+class Manager:
+    def __init__(self, repo_db):
+        self.repo_db = repo_db
+        self.load_repo_db()
+
+    def load_repo_db(self):
+        self.saved_repos = [tuple(row) for row in csv.reader(open(self.repo_db))]
+
+    def list_repos(self):
+        max_length = max([len(path) for path, url in self.saved_repos])
+        for path, url in self.saved_repos:
+            print "%s %s" %(path.ljust(max_length), url)
+
 def is_git_repo(path):
     git = os.path.join(path, '.git')
     return os.path.exists(git)
@@ -150,12 +163,6 @@ def fix_dirty():
 
         shutil.rmtree(tmp_dir)
         
-def list_repos_command():
-    repos = list(load_repos_list('repositories.csv'))
-    max_length = max([len(path) for path, url in repos])
-    for path, url in repos:
-        print "%s\t%s" %(path.ljust(max_length), url)
-
 def remove():
     saved_repos = set(load_repos_list('repositories.csv'))
     current_repos = set(list_repos())
@@ -169,6 +176,7 @@ def remove():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Git Repository Manager')
+    manager = Manager('repositories.csv')
     subparsers = parser.add_subparsers()
 
     sub_parser = subparsers.add_parser('clone')
@@ -180,7 +188,7 @@ if __name__ == '__main__':
     sub_parser = subparsers.add_parser('remove')
     sub_parser.set_defaults(func=remove)
     sub_parser = subparsers.add_parser('list')
-    sub_parser.set_defaults(func=list_repos_command)
+    sub_parser.set_defaults(func=manager.list_repos)
 
     args = parser.parse_args()
     args.func()
