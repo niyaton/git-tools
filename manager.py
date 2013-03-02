@@ -28,10 +28,24 @@ class Manager:
        for path, url in self.saved_repos:
             print path
             print '\t[remote url]:', url
-            print '\t   [git_dir]:', Repo(path).git_dir
+            try:
+                git_dir = Repo(path).git_dir
+                print '\t   [git_dir]:', Repo(path).git_dir
+            except:
+                print '\t   [git_dir]: not sotred'
  
-    def get_repo(path):
+    def get_repo(self, path):
         return Repo(path)
+
+    def check_stored(self):
+       for path, url in self.saved_repos:
+            try:
+                git_dir = Repo(path).git_dir
+            except:
+                git_dir = None
+            if not git_dir:
+                print 'repo path %s is not stored.' % (path)
+
 
 def is_git_repo(path):
     git = os.path.join(path, '.git')
@@ -203,7 +217,9 @@ if __name__ == '__main__':
     sub_parser = subparsers.add_parser('list')
     sub_parser.add_argument('-v', '--verbose', action='store_true')
     sub_parser.set_defaults(func= lambda args: manager.list_repos(args.verbose))
-    
+    sub_parser = subparsers.add_parser('check')
+    sub_parser.set_defaults(func= lambda args: manager.check_stored())
+ 
 
     args = parser.parse_args()
     args.func(args)
