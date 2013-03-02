@@ -15,10 +15,23 @@ class Manager:
     def load_repo_db(self):
         self.saved_repos = [tuple(row) for row in csv.reader(open(self.repo_db))]
 
-    def list_repos(self):
+    def list_repos(self, verbose=False):
+        if verbose:
+            return self.list_repos_verbose()
+
         max_length = max([len(path) for path, url in self.saved_repos])
         for path, url in self.saved_repos:
-            print "%s %s" %(path.ljust(max_length), url)
+            path = path.ljust(max_length)
+            print " ".join((path, url))
+
+    def list_repos_verbose(self):
+       for path, url in self.saved_repos:
+            print path
+            print '\t[remote url]:', url
+            print '\t   [git_dir]:', Repo(path).git_dir
+ 
+    def get_repo(path):
+        return Repo(path)
 
 def is_git_repo(path):
     git = os.path.join(path, '.git')
@@ -188,8 +201,10 @@ if __name__ == '__main__':
     sub_parser = subparsers.add_parser('remove')
     sub_parser.set_defaults(func=remove)
     sub_parser = subparsers.add_parser('list')
-    sub_parser.set_defaults(func=manager.list_repos)
+    sub_parser.add_argument('-v', '--verbose', action='store_true')
+    sub_parser.set_defaults(func= lambda args: manager.list_repos(args.verbose))
+    
 
     args = parser.parse_args()
-    args.func()
+    args.func(args)
     
