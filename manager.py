@@ -80,7 +80,6 @@ class Manager:
             path, dummy = os.path.split(path)
 
         return True
-
             
     def clone_unstored_repo(self, worktree_path, git_dir, url):
         print 'clone repository %s from %s' % (worktree_path, url)
@@ -95,8 +94,6 @@ class Manager:
             print 'clone is failed!'
         finally:
             shutil.rmtree(tmp_dir)
-
-  
 
 def is_git_repo(path):
     git = os.path.join(path, '.git')
