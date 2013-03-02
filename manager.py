@@ -191,46 +191,7 @@ def update_repos_list():
     writer = csv.writer(open('repositories.csv', 'w'))
     for row in current_repos | saved_repos:
         writer.writerow(row)
-
-def fix_dirty():
-    saved_repos = [path for path, url in load_repos_list('repositories.csv')]
-    unstored_repos = list(list_unstored_repos(saved_repos))
-
-    saved_repos = set(load_repos_list('repositories.csv'))
-    for path, url in saved_repos:
-        if not path in unstored_repos:
-            print '%s is already stored.' % (path)
-            continue
-
-        print '%s is not stored.' % (path)
-            
-        parent_dir, tail = os.path.split(path)
-
-        repo_root = '/Users/kenjif/new_repo'
-        repos_dir = os.path.join(repo_root, path)
-        parent_dir, dummy = os.path.split(repos_dir)
-        print parent_dir
-        curpath = parent_dir
-        while curpath != repo_root:
-            if os.path.isdir(curpath) and is_git_repo(curpath):
-                print "Wrong Repositories Structure! %s is a git repository." % (curpath)
-                continue
-            curpath, dummy = os.path.split(curpath)
-
-        if not os.path.exists(parent_dir):
-            os.makedirs(parent_dir)
-
-        print 'clone bare repository %s from %s' % (path, url)
-        tmp_dir = tempfile.mkdtemp()
-
-        kargs = {'separate-git-dir' : repos_dir}
-        repo = Repo.clone_from(url, tmp_dir, None, **kargs)
-        worktree_root = '/Users/kenjif/Dropbox/new_repo'
-        workingdir = os.path.join(worktree_root, path)
-        repo.config_writer().set('core', 'worktree', workingdir)
-
-        shutil.rmtree(tmp_dir)
-        
+       
 def remove():
     saved_repos = set(load_repos_list('repositories.csv'))
     current_repos = set(list_repos())
