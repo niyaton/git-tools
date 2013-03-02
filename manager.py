@@ -11,6 +11,8 @@ class Manager:
     def __init__(self, repo_db):
         self.repo_db = repo_db
         self.load_repo_db()
+        self.repo_root = '/Users/kenjif/new_repo'
+        self.worktree_root = '/Users/kenjif/Dropbox/new_repo'
 
     def load_repo_db(self):
         self.saved_repos = [tuple(row) for row in csv.reader(open(self.repo_db))]
@@ -46,6 +48,45 @@ class Manager:
             if not git_dir:
                 print 'repo path %s is not stored.' % (path)
 
+    def iter_unstored_repos(self):
+        for path, url in self.saved_repos:
+            try:
+                git_dir = Repo(path).git_dir
+            except:
+                yield (path, url)
+
+    def fix_unstored(self):
+        for path, url in self.iter_unstored_repos():
+            print '%s is not stored.' % (path)
+                
+            parent_dir, tail = os.path.split(path)
+
+            repos_dir = os.path.join(self.repo_root, path)
+            parent_dir, dummy = os.path.split(repos_dir)
+            print parent_dir
+            curpath = parent_dir
+            while curpath != self.repo_root:
+                if os.path.isdir(curpath) and is_git_repo(curpath):
+                    print "Wrong Repositories Structure! %s is a git repository." % (curpath)
+                    continue
+                curpath, dummy = os.path.split(curpath)
+
+            if not os.path.exists(parent_dir):
+                os.makedirs(parent_dir)
+
+            print 'clone repository %s from %s' % (path, url)
+            tmp_dir = tempfile.mkdtemp()
+
+            try:
+                kargs = {'separate-git-dir' : repos_dir}
+                repo = Repo.clone_from(url, tmp_dir, None, **kargs)
+                workingdir = os.path.join(self.worktree_root, path)
+                repo.config_writer().set('core', 'worktree', workingdir)
+            except:
+                print 'clone is failed!'
+            finally:
+                shutil.rmtree(tmp_dir)
+  
 
 def is_git_repo(path):
     git = os.path.join(path, '.git')
@@ -211,7 +252,7 @@ if __name__ == '__main__':
     sub_parser = subparsers.add_parser('update')
     sub_parser.set_defaults(func=update_repos_list)
     sub_parser = subparsers.add_parser('fix')
-    sub_parser.set_defaults(func=fix_dirty)
+    sub_parser.set_defaults(func= lambda args: manager.fix_unstored())
     sub_parser = subparsers.add_parser('remove')
     sub_parser.set_defaults(func=remove)
     sub_parser = subparsers.add_parser('list')
