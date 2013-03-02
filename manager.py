@@ -36,9 +36,6 @@ class Manager:
             except:
                 print '\t   [git_dir]: not sotred'
  
-    def get_repo(self, path):
-        return Repo(path)
-
     def check_stored(self):
        for path, url in self.saved_repos:
             try:
@@ -221,7 +218,6 @@ if __name__ == '__main__':
     sub_parser.set_defaults(func= lambda args: manager.list_repos(args.verbose))
     sub_parser = subparsers.add_parser('check')
     sub_parser.set_defaults(func= lambda args: manager.check_stored())
- 
 
     args = parser.parse_args()
     args.func(args)
