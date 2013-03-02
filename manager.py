@@ -60,29 +60,42 @@ class Manager:
 
             repos_dir = os.path.join(self.repo_root, path)
             parent_dir, dummy = os.path.split(repos_dir)
-            print parent_dir
-            curpath = parent_dir
-            while curpath != self.repo_root:
-                if os.path.isdir(curpath) and is_git_repo(curpath):
-                    print "Wrong Repositories Structure! %s is a git repository." % (curpath)
-                    continue
-                curpath, dummy = os.path.split(curpath)
 
             if not os.path.exists(parent_dir):
                 os.makedirs(parent_dir)
+                
+            if not self.check_dir_structure(parent_dir, self.repo_root):
+                raise Exception('Invalid Directory Structure!')
+            
+            self.clone_unstored_repo(path, repos_dir, url)
 
-            print 'clone repository %s from %s' % (path, url)
-            tmp_dir = tempfile.mkdtemp()
+    def check_dir_structure(self, path, until):
+        while path != until:
+            if os.path.isdir(path):
+                print '%s is not a directory!'
+                return False
+            if os.path.isdir(path) and is_git_repo(path):
+                print "Wrong Repositories Structure! %s is a git repository." % (curpath)
+                return False
+            path, dummy = os.path.split(path)
 
-            try:
-                kargs = {'separate-git-dir' : repos_dir}
-                repo = Repo.clone_from(url, tmp_dir, None, **kargs)
-                workingdir = os.path.join(self.worktree_root, path)
-                repo.config_writer().set('core', 'worktree', workingdir)
-            except:
-                print 'clone is failed!'
-            finally:
-                shutil.rmtree(tmp_dir)
+        return True
+
+            
+    def clone_unstored_repo(self, worktree_path, git_dir, url):
+        print 'clone repository %s from %s' % (worktree_path, url)
+        tmp_dir = tempfile.mkdtemp()
+
+        try:
+            kargs = {'separate-git-dir' : git_dir}
+            repo = Repo.clone_from(url, tmp_dir, None, **kargs)
+            workingdir = os.path.join(self.worktree_root, worktree_path)
+            repo.config_writer().set('core', 'worktree', workingdir)
+        except:
+            print 'clone is failed!'
+        finally:
+            shutil.rmtree(tmp_dir)
+
   
 
 def is_git_repo(path):
