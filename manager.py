@@ -6,16 +6,28 @@ from git.repo.fun import read_gitfile
 import csv
 import tempfile
 import shutil
+from ConfigParser import SafeConfigParser
 
 class Manager:
     def __init__(self, repo_db):
         self.repo_db = repo_db
         self.load_repo_db()
-        self.repo_root = '/Users/kenjif/new_repo'
-        self.worktree_root = '/Users/kenjif/Dropbox/new_repo'
 
     def load_repo_db(self):
-        self.saved_repos = [tuple(row) for row in csv.reader(open(self.repo_db))]
+        parser = SafeConfigParser()
+        parser.readfp(open(self.repo_db))
+        
+        path = parser.get('setting', 'worktree_root')
+        self.worktree_root = os.path.realpath(os.path.expanduser(path))
+        path = parser.get('setting', 'git_dirs_root')
+        self.repo_root = os.path.realpath(os.path.expanduser(path))
+
+        self.saved_repos = []
+        for section in parser.sections():
+            if section[0:5] != 'repo ':
+                continue
+            path = section[5:]
+            self.saved_repos.append((path, parser.get(section, 'url')))
 
     def list_repos(self, verbose=False):
         if verbose:
@@ -94,6 +106,16 @@ class Manager:
             print 'clone is failed!'
         finally:
             shutil.rmtree(tmp_dir)
+
+    def convert_csv2conf(self):
+        parser = SafeConfigParser()
+        for path, url in self.saved_repos:
+            section = 'repo %s' % path
+            parser.add_section(section)
+            parser.set(section, 'url', url)
+        parser.write(open('repos.conf', 'w'))
+
+
 
 def is_git_repo(path):
     git = os.path.join(path, '.git')
@@ -212,7 +234,7 @@ def remove():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Git Repository Manager')
-    manager = Manager('repositories.csv')
+    manager = Manager('repos.conf')
     subparsers = parser.add_subparsers()
 
     sub_parser = subparsers.add_parser('fix')
@@ -222,6 +244,8 @@ if __name__ == '__main__':
     sub_parser.set_defaults(func= lambda args: manager.list_repos(args.verbose))
     sub_parser = subparsers.add_parser('check')
     sub_parser.set_defaults(func= lambda args: manager.check_stored())
+    sub_parser = subparsers.add_parser('convert')
+    sub_parser.set_defaults(func= lambda args: manager.convert_csv2conf())
 
     args = parser.parse_args()
     args.func(args)
