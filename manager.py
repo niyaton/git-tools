@@ -83,16 +83,16 @@ class Manager:
 
     def check_dir_structure(self, path, until):
         while path != until:
-            if os.path.isdir(path):
-                print '%s is not a directory!'
+            if not os.path.isdir(path):
+                print '%s is not a directory!' % (path)
                 return False
             if os.path.isdir(path) and is_git_repo(path):
-                print "Wrong Repositories Structure! %s is a git repository." % (curpath)
+                print "Wrong Repositories Structure! %s is a git repository." % (path)
                 return False
             path, dummy = os.path.split(path)
 
         return True
-            
+
     def clone_unstored_repo(self, worktree_path, git_dir, url):
         print 'clone repository %s from %s' % (worktree_path, url)
         tmp_dir = tempfile.mkdtemp()
@@ -107,16 +107,53 @@ class Manager:
         finally:
             shutil.rmtree(tmp_dir)
 
-    def convert_csv2conf(self):
+    def clone_new_repo(self, path, url):
+        if any(p for p, url in self.saved_repos if p == path):
+            print 'You already cloned %s' % (path)
+            return
+
+        worktree_path = os.path.join(self.worktree_root, path)
+        git_dir = os.path.join(self.repo_root, path)
+
+        worktree_parent, tail = os.path.split(worktree_path)
+        if not self.check_dir_structure(worktree_parent, self.worktree_root):
+            return
+
+        git_dir_parent, tail = os.path.split(git_dir)
+        if not self.check_dir_structure(git_dir_parent, self.repo_root):
+            return
+
+        if os.path.exists(worktree_path):
+            print '%s is already exist' % (worktree_path)
+            return
+
+        if os.path.exists(git_dir):
+            print '%s is already exist' % (git_dir)
+            return
+
+        if not os.path.exists(worktree_parent):
+            os.makedirs(worktree_parent)
+        
+        if not os.path.exists(git_dir_parent):
+            os.makedirs(git_dir_parent)
+
+        print 'clone %s to %s' % (url, path)
+        kargs = {'separate-git-dir' : git_dir}
+        Repo.clone_from(url, worktree_path, None, **kargs)
+
+        self.save_repo(url, path)
+
+    def save_repo(self, path, url):
         parser = SafeConfigParser()
-        for path, url in self.saved_repos:
-            section = 'repo %s' % path
-            parser.add_section(section)
-            parser.set(section, 'url', url)
-        parser.write(open('repos.conf', 'w'))
+        with open(self.repo_db)  as f:
+            parser.readfp(f)
 
+        parser.add_section(path)
+        parser.set(path, 'url', url)
 
-
+        with open(self.repo_db, 'w') as f:
+            parser.write(f)
+    
 def is_git_repo(path):
     git = os.path.join(path, '.git')
     return os.path.exists(git)
@@ -246,6 +283,10 @@ if __name__ == '__main__':
     sub_parser.set_defaults(func= lambda args: manager.check_stored())
     sub_parser = subparsers.add_parser('convert')
     sub_parser.set_defaults(func= lambda args: manager.convert_csv2conf())
+    sub_parser = subparsers.add_parser('clone')
+    sub_parser.add_argument('path')
+    sub_parser.add_argument('url')
+    sub_parser.set_defaults(func= lambda args: manager.clone_new_repo(args.path, args.url))
 
     args = parser.parse_args()
     args.func(args)
