@@ -196,60 +196,6 @@ def list_repos():
             if remote.name == 'origin':
                 yield (dirname, remote.url)
 
-def list_stored_repos(repos):
-    repos_root = '/Users/kenjif/new_repo'
-    for repo in repos:
-        repo_dir = os.path.join(repos_root, repo)
-        if is_git_dir(repo_dir):
-            yield repo
-
-def list_unstored_repos(repos):
-    repos_root = '/Users/kenjif/new_repo'
-    for repo in repos:
-        repo_dir = os.path.join(repos_root, repo)
-        if not is_git_dir(repo_dir):
-            yield repo
-
-def load_repos_list(path):
-    for row in csv.reader(open(path)):
-        yield tuple(row)
-
-def clone_repos():
-    saved_repos = set(load_repos_list('repositories.csv')) 
-    current_repos = set(list_repos())
-    print saved_repos
-    print current_repos
-    for path, url in saved_repos - current_repos:
-        parent_dir, tail = os.path.split(path)
-        curpath = parent_dir
-        while curpath:
-            if os.path.isdir(curpath) and is_git_repo(curpath):
-                print "Wrong Repositories Structure! %s is a git repository." % (curpath)
-                continue
-            curpath, dummy = os.path.split(curpath)
-
-        if parent_dir != '' and not os.path.exists(parent_dir):
-            os.makedirs(parent_dir)
-        
-        repo_root = '/Users/kenjif/new_repo'
-        repos_dir = os.path.join(repo_root, path)
-        parent_dir, dummy = os.path.split(repos_dir)
-        print parent_dir
-        curpath = parent_dir
-        while curpath != repo_root:
-            if os.path.isdir(curpath) and is_git_repo(curpath):
-                print "Wrong Repositories Structure! %s is a git repository." % (curpath)
-                continue
-            curpath, dummy = os.path.split(curpath)
-
-        if not os.path.exists(parent_dir):
-            os.makedirs(parent_dir)
-
-        print 'clone %s to %s' % (url, path)
-        print repos_dir
-        kargs = {'separate-git-dir' : repos_dir}
-        Repo.clone_from(url, path, None, **kargs)
-
 def update_repos_list():
     saved_repos = set(load_repos_list('repositories.csv'))
     current_repos = set(list_repos())
